@@ -31,7 +31,7 @@ impl Game {
                 team: Arc::clone(&team),
                 timestamp: rand::thread_rng().gen_range(3.0..10.0),
                 duration: rand::thread_rng().gen_range(10.0..45.0),
-                action: ActionType::ThrowDice {},
+                action: ActionType::RollDice {},
             });
         }
 
@@ -77,8 +77,8 @@ impl Game {
             ActionType::Drink { player, beverage } => {
                 println!("{} should drink a {}!", player.name, beverage.name);
             }
-            ActionType::ThrowDice {} => {
-                self.throw_dice(Arc::clone(&event.team));
+            ActionType::RollDice {} => {
+                self.roll_dice(Arc::clone(&event.team));
             }
             ActionType::ThrowUp { player } => {
                 println!("{} throws up!", player.name);
@@ -95,19 +95,19 @@ impl Game {
                 team: Arc::clone(&event.team),
                 timestamp: self.time.get() + event.duration,
                 duration: rand::thread_rng().gen_range(10.0..45.0),
-                action: ActionType::ThrowDice {},
+                action: ActionType::RollDice {},
             });
         }
     }
 
-    fn throw_dice(&mut self, team: Arc<Team>) {
+    fn roll_dice(&mut self, team: Arc<Team>) {
         let dice_roll = (
             rand::thread_rng().gen_range(1..7),
             rand::thread_rng().gen_range(1..7),
         );
 
         println!(
-            "{} throws a {} and a {}",
+            "{} rolls a {} and a {}",
             team.name, dice_roll.0, dice_roll.1
         );
 
@@ -116,14 +116,22 @@ impl Game {
             team.rolled_double.set(true);
         }
 
+        let old_location = team.location.get();
         let board_len = self.board.len();
         let new_location = team.location.get() + min(dice_roll.0, dice_roll.1);
         team.location.set(if new_location >= board_len {
             println!("{} almost won the game. Board overflow :(", team.name);
-            board_len - 1 - (new_location - board_len)
+            board_len - 2 - (new_location - board_len)
         } else {
             new_location
         });
+
+        println!(
+            "{} moved from {} to {}",
+            team.name,
+            old_location,
+            team.location.get()
+        );
 
         if new_location == board_len - 1 {
             println!("{} won the game!", team.name);

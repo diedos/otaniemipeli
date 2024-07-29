@@ -8,7 +8,7 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub enum ActionType {
     Drink { player: Player, beverage: Beverage },
-    ThrowDice {},
+    RollDice {},
     ThrowUp { player: Player },
 }
 
