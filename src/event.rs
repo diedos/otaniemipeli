@@ -1,15 +1,20 @@
 use crate::beverage::Beverage;
-use crate::team::Player;
-use crate::team::Team;
+use crate::team::{Player, Team};
 use std::cmp::Ordering;
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 pub enum ActionType {
-    Drink { player: Player, beverage: Beverage },
+    EmptyPlace {},
     RollDice {},
-    ThrowUp { player: Player },
+    ThrowUp {
+        player: Arc<Mutex<Player>>,
+    },
+    DrinkBeverage {
+        player: Arc<Mutex<Player>>,
+        beverage: Beverage,
+    },
 }
 
 #[derive(Debug)]

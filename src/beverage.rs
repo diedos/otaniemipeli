@@ -15,3 +15,9 @@ pub enum BeverageType {
     Liquor,
     Slime,
 }
+
+#[derive(Debug)]
+pub struct BeverageHistoryItem {
+    pub beverage: Beverage,
+    pub timestamp: f32,
+}
