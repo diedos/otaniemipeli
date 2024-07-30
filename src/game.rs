@@ -86,10 +86,12 @@ impl Game {
         }
 
         // If the team doesn't have anything on their table, they want to roll the dice
+        // If the team has already won, don't schedule another dice roll
         if !self
             .event_queue
             .iter()
             .any(|queued_event| queued_event.team == event.team)
+            && event.team.location.get() != self.board.len() - 1
         {
             self.schedule_event(Event {
                 team: Arc::clone(&event.team),
