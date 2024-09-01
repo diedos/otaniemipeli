@@ -26,7 +26,7 @@ impl Player {
 
         let player_overflowing = self.liquid_content.get() > self.liquid_capacity;
 
-        player_overflowing
+        !player_overflowing
     }
 }
 
