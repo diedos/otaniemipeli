@@ -6,6 +6,7 @@ use rand::Rng;
 use std::cell::Cell;
 use std::cmp::min;
 use std::collections::BinaryHeap;
+use std::f32;
 use std::sync::{Arc, Mutex};
 
 pub struct Game {
@@ -163,7 +164,32 @@ impl Game {
     // TODO: beverage sharing strategies
     fn assign_beverage(&mut self, team: Arc<Team>, beverage: Beverage) {
         let player = &team.players[0];
-        let duration = self.rng.gen_range(8.0..60.0);
+
+        // The player is able to down beverages faster when they are far from
+        // their maximum liquid capacity. Plot the following function to see how it behaves:
+        // y=1+(m-1)*(exp(k*x)-1)/(exp(k)-1)
+        // m = full stomach modifier at x = 1.0
+        // x = stomach fill percentage
+        // k = curve steepness
+        // c = stomach capacity
+        // With an empty stomach, modifier is 1.0, with a full stomach, modifier is 3.0.
+        // Exponential increase in between.
+        let player_guard = player.lock().unwrap();
+        let full_stomach_modifier = 3.0;
+        let curve_steepness = 3.0;
+        let player_fill_percentage =
+            player_guard.liquid_content.get() as f32 / player_guard.liquid_capacity as f32;
+        let capacity_modifier = 1.0
+            + (full_stomach_modifier - 1.0)
+                * (f32::exp(curve_steepness * player_fill_percentage) - 1.0)
+                / (f32::exp(curve_steepness) - 1.0);
+
+        // Shots and other small beverages are often enjoyed faster.
+        // We are using 330 ml as a base for calculating the duration.
+        let size_modifier = &beverage.size_ml / 330;
+
+        let duration =
+            self.rng.gen_range(8.0..60.0) * capacity_modifier as f32 * size_modifier as f32;
 
         self.schedule_event(Event {
             team: Arc::clone(&team),
