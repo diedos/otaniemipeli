@@ -13,25 +13,29 @@ pub struct Game {
     pub teams: Vec<Arc<Team>>,
     pub time: Cell<f32>,
     pub event_queue: BinaryHeap<Event>,
+    pub rng: rand::rngs::StdRng,
 }
 
 impl Game {
-    pub fn new(teams: Vec<Arc<Team>>, board: Vec<Arc<Mutex<Place>>>) -> Self {
+    pub fn new(teams: Vec<Arc<Team>>, board: Vec<Arc<Mutex<Place>>>, seed: u64) -> Self {
         Self {
             board,
             teams,
             time: Cell::new(0.0),
             event_queue: BinaryHeap::new(),
+            rng: rand::SeedableRng::seed_from_u64(seed),
         }
     }
 
     pub fn start(&mut self) {
         let teams: Vec<_> = self.teams.iter().cloned().collect();
         for team in teams {
+            let timestamp = self.rng.gen_range(3.0..10.0);
+            let duration = self.rng.gen_range(10.0..45.0);
             self.schedule_event(Event {
                 team: Arc::clone(&team),
-                timestamp: rand::thread_rng().gen_range(3.0..10.0),
-                duration: rand::thread_rng().gen_range(10.0..45.0),
+                timestamp: timestamp,
+                duration: duration,
                 action: ActionType::RollDice {},
             });
         }
@@ -95,10 +99,11 @@ impl Game {
 
             ActionType::RollDice {} => {
                 self.roll_dice(Arc::clone(&event.team));
+                let duration = self.rng.gen_range(1.0..10.0);
                 self.schedule_event(Event {
                     team: Arc::clone(&event.team),
                     timestamp: self.time.get() + event.duration,
-                    duration: rand::thread_rng().gen_range(1.0..10.0),
+                    duration: duration,
                     action: ActionType::EmptyPlace {},
                 });
             }
@@ -124,10 +129,11 @@ impl Game {
                 }
 
                 if !success {
+                    let duration = self.rng.gen_range(1.0..60.0);
                     self.schedule_event(Event {
                         team: Arc::clone(&event.team),
                         timestamp: self.time.get() + event.duration / 2.0,
-                        duration: rand::thread_rng().gen_range(5.0..60.0),
+                        duration: duration,
                         action: ActionType::ThrowUp {
                             player: player.clone(),
                         },
@@ -144,10 +150,11 @@ impl Game {
             .any(|queued_event| queued_event.team == event.team)
             && event.team.location.get() != self.board.len() - 1
         {
+            let duration = self.rng.gen_range(10.0..45.0);
             self.schedule_event(Event {
                 team: Arc::clone(&event.team),
                 timestamp: self.time.get() + event.duration,
-                duration: rand::thread_rng().gen_range(10.0..45.0),
+                duration: duration,
                 action: ActionType::RollDice {},
             });
         }
@@ -156,11 +163,12 @@ impl Game {
     // TODO: beverage sharing strategies
     fn assign_beverage(&mut self, team: Arc<Team>, beverage: Beverage) {
         let player = &team.players[0];
+        let duration = self.rng.gen_range(8.0..60.0);
 
         self.schedule_event(Event {
             team: Arc::clone(&team),
             timestamp: self.time.get(),
-            duration: rand::thread_rng().gen_range(8.0..60.0),
+            duration: duration,
             action: ActionType::DrinkBeverage {
                 player: Arc::clone(&player),
                 beverage: beverage.clone(),
@@ -169,10 +177,7 @@ impl Game {
     }
 
     fn roll_dice(&mut self, team: Arc<Team>) {
-        let dice_roll = (
-            rand::thread_rng().gen_range(1..7),
-            rand::thread_rng().gen_range(1..7),
-        );
+        let dice_roll = (self.rng.gen_range(1..7), self.rng.gen_range(1..7));
 
         println!(
             "{} rolls a {} and a {}",

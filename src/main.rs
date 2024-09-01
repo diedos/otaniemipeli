@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use team::{Player, Team};
 
 fn main() {
-    let _args = Args::parse();
+    let args = Args::parse();
 
     let beer = Beverage {
         name: "Beer".to_string(),
@@ -116,6 +116,6 @@ fn main() {
         }),
     ];
 
-    let mut game = Game::new(teams, board);
+    let mut game = Game::new(teams, board, args.seed);
     game.start();
 }
